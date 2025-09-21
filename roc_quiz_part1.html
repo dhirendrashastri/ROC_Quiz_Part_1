@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROC Annual Filing Quiz — Part 1</title>
+<style>
+body { font-family: Arial, sans-serif; margin:0; background:#0b1220; color:#e7ecf3; }
+header { padding:20px 24px; background:#0e1526; border-bottom:1px solid #1f2a44; position:sticky; top:0; z-index:10; }
+h1 { margin:0; font-size:20px; }
+.container { max-width:900px; margin:0 auto; padding:24px; }
+.card { background:#121a2f; border:1px solid #243052; border-radius:14px; padding:18px; margin-bottom:16px; }
+.qtitle { font-weight:600; margin-bottom:10px; }
+.options label { display:block; padding:10px 12px; border:1px solid #2a3761; border-radius:10px; margin:8px 0; cursor:pointer; }
+.options input { margin-right:8px; }
+.btn { background:#2b85f5; color:#fff; border:none; padding:12px 16px; border-radius:10px; cursor:pointer; font-weight:600; }
+.btn:disabled { opacity:.6; cursor:not-allowed; }
+.row { display:flex; gap:12px; flex-wrap:wrap; }
+.pill { font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid #2a3761; }
+.muted { color:#aab7d1; }
+.correct { border-color:#1f8b4c; background:#0e2a1d; }
+.wrong { border-color:#a34141; background:#2a1414; }
+.admin { background:#0f1a33; border:1px dashed #2a3761; }
+</style>
+</head>
+<body>
+<header><h1>ROC Annual Filing Quiz — Part 1</h1></header>
+<div class="container">
+  <div class="card admin">
+    <strong>Answer Key</strong> · <span class="muted">Set correct option (a/b/c/d) for each question. Saved locally in your browser.</span>
+    <div id="adminKey" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" onclick="saveKey()">Save Answer Key</button>
+      <button class="btn" style="background:#384564" onclick="clearKey()">Clear Saved Key</button>
+    </div>
+  </div>
+
+  <div id="quiz"></div>
+
+  <div class="row" style="margin:16px 0">
+    <button class="btn" id="submitBtn" onclick="submitQuiz()">Submit</button>
+    <button class="btn" style="background:#384564" onclick="resetQuiz()">Reset</button>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+const QUESTIONS = [{"question": "What does ROC stand for and under which ministry does it function?", "options": [{"label": "a", "text": "Registrar of Courts under Ministry of Corporate Affairs"}, {"label": "b", "text": "Registrar of Corporates under Ministry of Corporate Affairs"}, {"label": "c", "text": "Registrar of Companies under Ministry of Consumer Affairs"}, {"label": "d", "text": "Registrar of Companies under Ministry of Corporate Affairs"}]}, {"question": "How many ROCs are there in India ?", "options": [{"label": "a", "text": "24"}, {"label": "b", "text": "25"}, {"label": "c", "text": "26"}, {"label": "d", "text": "None of the above"}]}, {"question": "Which of the following States has more than one ROC ?", "options": [{"label": "a", "text": "Maharashtra and Kerala"}, {"label": "b", "text": "Maharashtra and Uttar Pradesh"}, {"label": "c", "text": "Maharashtra and Tamil Nadu"}, {"label": "d", "text": "Maharashtra and Karnataka"}]}, {"question": "Which of the following statement is False.", "options": [{"label": "a", "text": "ROC Annual Filing is an yearly reporting exercise by Company to Government"}, {"label": "b", "text": "There are 7 ROCs that have jurisdiction of more than 1 State"}, {"label": "c", "text": "ROC Annual Filing builds trust and credibility for unregistered entities like Sole proprietory and partnership firms"}, {"label": "d", "text": "ROC is like the Governments Official Record Keeper"}]}, {"question": "Which of the following E-form is not part of ROC Annual Filing ?", "options": [{"label": "a", "text": "AOC-4"}, {"label": "b", "text": "MGT-6"}, {"label": "c", "text": "MGT-7"}, {"label": "d", "text": "ADT-1"}]}];
+
+// Shuffle ONLY questions (options remain in fixed a/b/c/d order)
+function shuffle(arr) { for (let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]} return arr; }
+const shuffled = shuffle([...QUESTIONS]);
+
+const keyStorage = "roc_quiz_part1_key_v1";
+let answerKey = JSON.parse(localStorage.getItem(keyStorage) || 'null') || {};
+
+function renderQuiz() {
+  const wrap = document.getElementById('quiz');
+  wrap.innerHTML='';
+  shuffled.forEach((q, qi) => {
+    const card = document.createElement('div');
+    card.className='card';
+    const title=document.createElement('div');
+    title.className='qtitle';
+    title.textContent=`Q${qi+1}. ${q.question}`;
+    const opts=document.createElement('div');
+    opts.className='options';
+    (q.options||[]).forEach((opt, oi) => {
+      const label=document.createElement('label');
+      const input=document.createElement('input');
+      input.type='radio'; input.name='q'+qi; input.value=oi;
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(' '+(opt.label||['a','b','c','d'][oi])+') '+opt.text));
+      opts.appendChild(label);
+    });
+    card.appendChild(title);
+    card.appendChild(opts);
+    wrap.appendChild(card);
+  });
+}
+
+function renderAdmin() {
+  const admin=document.getElementById('adminKey');
+  admin.innerHTML='';
+  shuffled.forEach((q, qi) => {
+    const row=document.createElement('div'); row.className='row';
+    const title=document.createElement('div'); title.textContent='Q'+(qi+1)+':';
+    const input=document.createElement('input'); input.placeholder='a/b/c/d';
+    input.value=answerKey[qi]||''; input.maxLength=1;
+    input.oninput=(e)=>{ const v=(e.target.value||'').toLowerCase(); if(!'abcd'.includes(v)&&v!=='') e.target.value=''; answerKey[qi]=e.target.value.toLowerCase(); };
+    row.appendChild(title); row.appendChild(input); admin.appendChild(row);
+  });
+}
+
+function saveKey(){ localStorage.setItem(keyStorage, JSON.stringify(answerKey)); alert('Saved!'); }
+function clearKey(){ localStorage.removeItem(keyStorage); answerKey={}; renderAdmin(); }
+function resetQuiz(){ document.querySelectorAll('input[type=radio]').forEach(r=>r.checked=false); document.getElementById('results').innerHTML=''; window.scrollTo({top:0, behavior:'smooth'}); }
+
+function submitQuiz(){
+  const total=shuffled.length;
+  for(let i=0;i<total;i++){ if(!'abcd'.includes((answerKey[i]||'').toLowerCase())){ alert('Please set the answer key for all questions in the admin panel.'); return; } }
+  let score=0;
+  const res=document.getElementById('results'); res.innerHTML='';
+  shuffled.forEach((q, qi)=>{
+    const chosen=document.querySelector('input[name=q'+qi+']:checked');
+    const chosenIdx=chosen?parseInt(chosen.value,10):-1;
+    const correctLetter=(answerKey[qi]||'').toLowerCase();
+    const correctIdx=['a','b','c','d'].indexOf(correctLetter);
+    const block=document.createElement('div'); block.className='card '+(chosenIdx===correctIdx?'correct':'wrong');
+    const t=document.createElement('div'); t.className='qtitle'; t.textContent=`Q${qi+1}. ${q.question}`;
+    const yourTxt=chosenIdx>=0?(['a','b','c','d'][chosenIdx]+') '+(q.options[chosenIdx]?.text||'')):'No answer selected';
+    const you=document.createElement('div'); you.innerHTML='<span class="pill">Your answer</span> '+yourTxt;
+    const corr=document.createElement('div'); corr.innerHTML='<div style="margin-top:6px"><span class="pill">Correct</span> '+correctLetter+') '+(q.options[correctIdx]?.text||'')+'</div>';
+    block.appendChild(t); block.appendChild(you); block.appendChild(corr); res.appendChild(block);
+    if(chosenIdx===correctIdx) score+=1;
+  });
+  const summary=document.createElement('div'); summary.className='card'; summary.innerHTML='<strong>Score: '+score+' / '+shuffled.length+'</strong>';
+  res.prepend(summary); window.scrollTo({top: document.getElementById('results').offsetTop-12, behavior:'smooth'});
+}
+
+renderQuiz();
+renderAdmin();
+</script>
+</body>
+</html>
